@@ -1,0 +1,71 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  # --- Database Service ---
+  # Using SQLite is a bit unconventional in Docker as it's file-based.
+  # A better practice for a pipeline is a proper database like Postgres.
+  # However, for simplicity and direct file access, we can simulate it.
+  # We'll use a named volume to persist the SQLite file.
+  # A more realistic approach for a pipeline would be Postgres/MySQL.
+  # Let's stick with SQLite for now, simulating persistence with a volume.
+  # ALTERNATIVE (Recommended for pipelines): Use Postgres
+  # db:
+  #   image: postgres:13
+  #   environment:
+  #     POSTGRES_USER: reviewer
+  #     POSTGRES_PASSWORD: reviewerpass
+  #     POSTGRES_DB: playstore_reviews
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   ports:
+  #     - "5432:5432" # Expose for external tools if needed
+
+  # For SQLite, we simulate persistence by mounting a volume to a directory
+  # where the reviews.db file will reside.
+  # The scraper and processor will write/read from this shared volume.
+  # This service definition is a placeholder/workaround for SQLite.
+  # A real service would be defined here (like the Postgres example above).
+
+  # --- Scraper Service ---
+  scraper:
+    build:
+      context: ./scraper
+      dockerfile: Dockerfile
+    # Depend on nothing for SQLite file-based DB (no explicit DB service needed)
+    # If using Postgres, you'd depend on the `db` service being healthy.
+    # depends_on:
+    #   - db
+    volumes:
+      # Mount the volume where reviews.db will be stored/shared
+      # This path inside the container is where the DB file will be accessed/written
+      - sqlite_data:/data
+    environment:
+      # Pass configuration to the scraper via environment variables
+      # The path inside the container where the DB file is expected
+      - DB_PATH=/data/reviews.db
+      - MAX_REVIEWS_PER_APP=100 # Example config
+    # command: python scraper.py # Override default CMD if needed
+
+  # --- Processor Service ---
+  processor:
+    build:
+      context: ./processor
+      dockerfile: Dockerfile
+    # Depend on the scraper finishing? Not easily done in simple compose.
+    # Airflow is better for complex dependencies.
+    # depends_on:
+    #   - scraper # Doesn't guarantee scraper *finished*
+    volumes:
+      # Mount the same volume so processor can read the DB file created by scraper
+      - sqlite_data:/data
+    environment:
+      # Pass configuration to the processor via environment variables
+      - DB_PATH=/data/reviews.db
+    # command: python processor.py # Override default CMD if needed
+
+# Define named volumes for data persistence
+volumes:
+  # This volume will persist the SQLite database file
+  sqlite_data:
+  # postgres_data: # If using Postgres example
