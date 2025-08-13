@@ -1,0 +1,68 @@
+[2025-08-13T02:11:39.122+0000] {local_task_job_runner.py:120} INFO - ::group::Pre task execution logs
+[2025-08-13T02:11:39.229+0000] {taskinstance.py:2076} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: playstore_review_etl_pipeline.extract_raw_reviews manual__2025-08-13T02:09:31.671168+00:00 [queued]>
+[2025-08-13T02:11:39.255+0000] {taskinstance.py:2076} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: playstore_review_etl_pipeline.extract_raw_reviews manual__2025-08-13T02:09:31.671168+00:00 [queued]>
+[2025-08-13T02:11:39.257+0000] {taskinstance.py:2306} INFO - Starting attempt 2 of 3
+[2025-08-13T02:11:39.292+0000] {taskinstance.py:2330} INFO - Executing <Task(PythonOperator): extract_raw_reviews> on 2025-08-13 02:09:31.671168+00:00
+[2025-08-13T02:11:39.325+0000] {standard_task_runner.py:90} INFO - Running: ['***', 'tasks', 'run', 'playstore_review_etl_pipeline', 'extract_raw_reviews', 'manual__2025-08-13T02:09:31.671168+00:00', '--job-id', '56', '--raw', '--subdir', 'DAGS_FOLDER/my_pipeline.py', '--cfg-path', '/tmp/tmpar9xxcp_']
+[2025-08-13T02:11:39.338+0000] {logging_mixin.py:188} WARNING - /home/***/.local/lib/python3.12/site-packages/***/task/task_runner/standard_task_runner.py:61 DeprecationWarning: This process (pid=253) is multi-threaded, use of fork() may lead to deadlocks in the child.
+[2025-08-13T02:11:39.338+0000] {standard_task_runner.py:91} INFO - Job 56: Subtask extract_raw_reviews
+[2025-08-13T02:11:39.341+0000] {standard_task_runner.py:63} INFO - Started process 255 to run task
+[2025-08-13T02:11:39.521+0000] {task_command.py:426} INFO - Running <TaskInstance: playstore_review_etl_pipeline.extract_raw_reviews manual__2025-08-13T02:09:31.671168+00:00 [running]> on host 30f90b9829ae
+[2025-08-13T02:11:39.807+0000] {taskinstance.py:2648} INFO - Exporting env vars: AIRFLOW_CTX_DAG_EMAIL='your_email@domain.com' AIRFLOW_CTX_DAG_OWNER='data_engineering_team' AIRFLOW_CTX_DAG_ID='playstore_review_etl_pipeline' AIRFLOW_CTX_TASK_ID='extract_raw_reviews' AIRFLOW_CTX_EXECUTION_DATE='2025-08-13T02:09:31.671168+00:00' AIRFLOW_CTX_TRY_NUMBER='2' AIRFLOW_CTX_DAG_RUN_ID='manual__2025-08-13T02:09:31.671168+00:00'
+[2025-08-13T02:11:39.811+0000] {taskinstance.py:430} INFO - ::endgroup::
+[2025-08-13T02:11:39.876+0000] {my_pipeline.py:41} INFO - Starting Scraper Task...
+[2025-08-13T02:11:39.878+0000] {my_pipeline.py:46} INFO - Calling scraper.main()...
+[2025-08-13T02:11:39.882+0000] {scraper.py:172} INFO - === Google Play Store Review Scraper (SQLite) Started ===
+[2025-08-13T02:11:39.887+0000] {scraper.py:34} ERROR - Error connecting to database: unable to open database file
+[2025-08-13T02:11:39.889+0000] {scraper.py:199} ERROR - === Scraper Run Failed! Error: unable to open database file ===
+Traceback (most recent call last):
+  File "/opt/airflow/scraper_code/scraper.py", line 177, in main
+    conn = get_db_connection()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/opt/airflow/scraper_code/scraper.py", line 28, in get_db_connection
+    conn = sqlite3.connect(DB_PATH)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.OperationalError: unable to open database file
+[2025-08-13T02:11:39.912+0000] {my_pipeline.py:54} ERROR - Scraper task failed with exception: unable to open database file
+Traceback (most recent call last):
+  File "/opt/airflow/dags/my_pipeline.py", line 47, in run_scraper
+    scraper_module.main()
+  File "/opt/airflow/scraper_code/scraper.py", line 177, in main
+    conn = get_db_connection()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/opt/airflow/scraper_code/scraper.py", line 28, in get_db_connection
+    conn = sqlite3.connect(DB_PATH)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.OperationalError: unable to open database file
+[2025-08-13T02:11:39.929+0000] {taskinstance.py:441} INFO - ::group::Post task execution logs
+[2025-08-13T02:11:39.930+0000] {taskinstance.py:2905} ERROR - Task failed with exception
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.12/site-packages/airflow/models/taskinstance.py", line 465, in _execute_task
+    result = _execute_callable(context=context, **execute_callable_kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/airflow/.local/lib/python3.12/site-packages/airflow/models/taskinstance.py", line 432, in _execute_callable
+    return execute_callable(context=context, **execute_callable_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/airflow/.local/lib/python3.12/site-packages/airflow/models/baseoperator.py", line 400, in wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/airflow/.local/lib/python3.12/site-packages/airflow/operators/python.py", line 235, in execute
+    return_value = self.execute_callable()
+                   ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/airflow/.local/lib/python3.12/site-packages/airflow/operators/python.py", line 252, in execute_callable
+    return self.python_callable(*self.op_args, **self.op_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/airflow/dags/my_pipeline.py", line 47, in run_scraper
+    scraper_module.main()
+  File "/opt/airflow/scraper_code/scraper.py", line 177, in main
+    conn = get_db_connection()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/opt/airflow/scraper_code/scraper.py", line 28, in get_db_connection
+    conn = sqlite3.connect(DB_PATH)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+sqlite3.OperationalError: unable to open database file
+[2025-08-13T02:11:39.970+0000] {taskinstance.py:1206} INFO - Marking task as UP_FOR_RETRY. dag_id=playstore_review_etl_pipeline, task_id=extract_raw_reviews, run_id=manual__2025-08-13T02:09:31.671168+00:00, execution_date=20250813T020931, start_date=20250813T021139, end_date=20250813T021139
+[2025-08-13T02:11:39.994+0000] {standard_task_runner.py:110} ERROR - Failed to execute job 56 for task extract_raw_reviews (unable to open database file; 255)
+[2025-08-13T02:11:40.045+0000] {local_task_job_runner.py:240} INFO - Task exited with return code 1
+[2025-08-13T02:11:40.096+0000] {taskinstance.py:3498} INFO - 0 downstream tasks scheduled from follow-on schedule check
+[2025-08-13T02:11:40.102+0000] {local_task_job_runner.py:222} INFO - ::endgroup::

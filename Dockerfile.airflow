@@ -1,0 +1,28 @@
+# Dockerfile.airflow
+# Use the official Airflow image as the base
+FROM apache/airflow:2.9.1
+
+# Copy the requirements file into the image
+COPY airflow_requirements.txt /tmp/airflow_requirements.txt
+
+# Switch to root user to install system dependencies (if needed, usually not for these libs)
+USER root
+# Example: RUN apt-get update && apt-get install -y some-system-lib && apt-get clean
+
+# Switch back to the airflow user
+USER airflow
+
+# Install the Python dependencies using pip
+RUN pip install --no-cache-dir --disable-pip-version-check \
+    -r /tmp/airflow_requirements.txt
+
+# --- Optional: Install NLTK Data during image build ---
+# This avoids downloading it every time a task runs.
+# RUN python -c "import nltk; nltk.download('punkt'); nltk.download('punkt_tab'); nltk.download('stopwords'); nltk.download('wordnet'); nltk.download('omw-1.4'); print('NLTK data downloaded.')"
+RUN python -c "import nltk; \
+  nltk.download('punkt_tab'); \
+  nltk.download('stopwords'); \
+  nltk.download('wordnet'); \
+  nltk.download('omw-1.4'); \
+  print('NLTK data (punkt_tab, stopwords, wordnet, omw-1.4) downloaded.')"
+# --- END UPDATE ---

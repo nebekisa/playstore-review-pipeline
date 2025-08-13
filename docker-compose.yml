@@ -1,71 +1,153 @@
-# docker-compose.yml
+# docker-compose.yml (Full, Corrected Version)
 version: '3.8'
 
 services:
-  # --- Database Service ---
-  # Using SQLite is a bit unconventional in Docker as it's file-based.
-  # A better practice for a pipeline is a proper database like Postgres.
-  # However, for simplicity and direct file access, we can simulate it.
-  # We'll use a named volume to persist the SQLite file.
-  # A more realistic approach for a pipeline would be Postgres/MySQL.
-  # Let's stick with SQLite for now, simulating persistence with a volume.
-  # ALTERNATIVE (Recommended for pipelines): Use Postgres
-  # db:
-  #   image: postgres:13
-  #   environment:
-  #     POSTGRES_USER: reviewer
-  #     POSTGRES_PASSWORD: reviewerpass
-  #     POSTGRES_DB: playstore_reviews
-  #   volumes:
-  #     - postgres_data:/var/lib/postgresql/data
-  #   ports:
-  #     - "5432:5432" # Expose for external tools if needed
-
-  # For SQLite, we simulate persistence by mounting a volume to a directory
-  # where the reviews.db file will reside.
-  # The scraper and processor will write/read from this shared volume.
-  # This service definition is a placeholder/workaround for SQLite.
-  # A real service would be defined here (like the Postgres example above).
-
-  # --- Scraper Service ---
-  scraper:
-    build:
-      context: ./scraper
-      dockerfile: Dockerfile
-    # Depend on nothing for SQLite file-based DB (no explicit DB service needed)
-    # If using Postgres, you'd depend on the `db` service being healthy.
-    # depends_on:
-    #   - db
-    volumes:
-      # Mount the volume where reviews.db will be stored/shared
-      # This path inside the container is where the DB file will be accessed/written
-      - sqlite_data:/data
+  # --- PostgreSQL for Airflow Metadata ---
+  postgres:
+    image: postgres:13
     environment:
-      # Pass configuration to the scraper via environment variables
-      # The path inside the container where the DB file is expected
-      - DB_PATH=/data/reviews.db
-      - MAX_REVIEWS_PER_APP=100 # Example config
-    # command: python scraper.py # Override default CMD if needed
-
-  # --- Processor Service ---
-  processor:
-    build:
-      context: ./processor
-      dockerfile: Dockerfile
-    # Depend on the scraper finishing? Not easily done in simple compose.
-    # Airflow is better for complex dependencies.
-    # depends_on:
-    #   - scraper # Doesn't guarantee scraper *finished*
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
     volumes:
-      # Mount the same volume so processor can read the DB file created by scraper
-      - sqlite_data:/data
-    environment:
-      # Pass configuration to the processor via environment variables
-      - DB_PATH=/data/reviews.db
-    # command: python processor.py # Override default CMD if needed
+      - postgres_db_volume:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 5s
+      retries: 5
+    restart: always
+  init-sqlite-dir:
+    image: busybox:latest # Lightweight image for simple tasks
+    volumes:
+      - sqlite_data:/app/database # Mount the volume
+      - ./scripts/init_sqlite_dir.sh:/init_sqlite_dir.sh:ro
+    command: ["/bin/sh", "/init_sqlite_dir.sh"]
+    user: "root:root" #
 
-# Define named volumes for data persistence
+  # --- Airflow Webserver ---
+  airflow-webserver:
+    build:
+      context: . # Build context is the current directory (where docker-compose.yml is)
+      dockerfile: Dockerfile.airflow # Use your custom Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+      init-sqlite-dir: # ADD DEPENDENCY
+        condition: service_completed_successfully # Wait for init to finish
+    
+    environment:
+      # --- Core Airflow Configuration ---
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      AIRFLOW__CORE__FERNET_KEY: ''
+      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+      DB_PATH: /app/database/reviews.db
+      # --- SMTP Configuration for Email Alerts (if needed) ---
+      # Note: Requires smtp.gmail.com access, app password, and correct network/Docker setup.
+      # AIRFLOW__SMTP__SMTP_HOST: smtp.gmail.com
+      # AIRFLOW__SMTP__SMTP_STARTTLS: 'True'
+      # AIRFLOW__SMTP__SMTP_SSL: 'False'
+      # AIRFLOW__SMTP__SMTP_USER: libekiger@gmail.com
+      # AIRFLOW__SMTP__SMTP_PASSWORD: ggxlwpmgdgbiynus # KEEP THIS SECRET!
+      # AIRFLOW__SMTP__SMTP_PORT: '587'
+      # AIRFLOW__SMTP__FROM: libekiger@gmail.com
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      # --- Mount SQLite Data Volume ---
+      # Shares the SQLite DB file between containers.
+      # Ensure tasks inside containers use the path '/app/database/reviews.db'
+      - sqlite_data:/app/database
+      # --- Mount Project Code (Scraper/Processor) ---
+      # Makes your local code available inside the Airflow containers.
+      - ./scraper:/opt/airflow/scraper_code
+      - ./processor:/opt/airflow/processor_code
+    user: "50000:50000"
+    ports:
+      - "8081:8080" # Map host port 8081 to container port 8080
+    command: webserver
+    restart: always
+
+  # --- Airflow Scheduler ---
+  airflow-scheduler:
+    build:
+      context: . # Build context is the current directory (where docker-compose.yml is)
+      dockerfile: Dockerfile.airflow # Use your custom Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+      init-sqlite-dir: # ADD DEPENDENCY
+        condition: service_completed_successfully # Wait for init to finish
+    
+    environment:
+      # --- Core Airflow Configuration ---
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      AIRFLOW__CORE__FERNET_KEY: ''
+      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+      DB_PATH: /app/database/reviews.db
+      # --- SMTP Configuration for Email Alerts (if needed) ---
+      # AIRFLOW__SMTP__SMTP_HOST: smtp.gmail.com
+      # AIRFLOW__SMTP__SMTP_STARTTLS: 'True'
+      # AIRFLOW__SMTP__SMTP_SSL: 'False'
+      # AIRFLOW__SMTP__SMTP_USER: libekiger@gmail.com
+      # AIRFLOW__SMTP__SMTP_PASSWORD: ggxlwpmgdgbiynus # KEEP THIS SECRET!
+      # AIRFLOW__SMTP__SMTP_PORT: '587'
+      # AIRFLOW__SMTP__FROM: libekiger@gmail.com
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - sqlite_data:/app/database # Share SQLite DB volume
+      - ./scraper:/opt/airflow/scraper_code # Share Scraper code volume
+      - ./processor:/opt/airflow/processor_code # Share Processor code volume
+    user: "50000:50000"
+    command: scheduler
+    restart: always
+
+  # --- Airflow Init (One-time setup) - SIMPLIFIED & CORRECTED ---
+  airflow-init:
+    build:
+      context: . # Build context is the current directory (where docker-compose.yml is)
+      dockerfile: Dockerfile.airflow # Use your custom Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+      init-sqlite-dir: # ADD DEPENDENCY
+        condition: service_completed_successfully # Wait for init to finish
+    
+    environment:
+      # --- Core Connection & Init Configuration ---
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+      AIRFLOW__CORE__FERNET_KEY: '' # In production, generate a secure key
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false' # Don't load examples
+      # --- Init Actions (Handled by Airflow's default entrypoint) ---
+      _AIRFLOW_DB_MIGRATE: 'true'
+      _AIRFLOW_WWW_USER_CREATE: 'true'
+      _AIRFLOW_WWW_USER_USERNAME: admin
+      _AIRFLOW_WWW_USER_PASSWORD: admin # CHANGE THIS FOR PRODUCTION!
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      # If you need shared data/code mounted for init, add it here too.
+      - sqlite_data:/app/database
+      - ./scraper:/opt/airflow/scraper_code
+      - ./processor:/opt/airflow/processor_code
+    user: "50000:50000"
+    # --- Use Airflow's standard entrypoint which handles _AIRFLOW_* env vars ---
+    # This should work correctly with Airflow 2.9.1 image
+    # No need to override entrypoint/command manually anymore
+    # The 'restart: "no"' ensures it only runs once.
+    restart: "no" # Run only once
+  # --- End of Airflow Init ---
+
+# --- Define Volumes (Must be top-level) ---
 volumes:
-  # This volume will persist the SQLite database file
-  sqlite_data:
-  # postgres_data: # If using Postgres example
+  postgres_db_volume:
+  sqlite_data: # Volume for SQLite database file
+
+# --- REMOVED INVALID ROOT-LEVEL ENVIRONMENT SECTION ---
+# Environment variables must be defined within a specific service.
+# The SMTP settings are already included in the webserver/scheduler services above.

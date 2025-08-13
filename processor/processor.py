@@ -13,7 +13,7 @@ import os
 from datetime import datetime
 
 # --- Configuration ---
-DB_PATH = os.getenv('DB_PATH', '../reviews.db')  # Use env var or default relative path
+DB_PATH = "/app/database/reviews.db"  # Use env var or default relative path
 
 # --- Logging ---
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

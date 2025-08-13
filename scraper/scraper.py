@@ -7,7 +7,7 @@ import logging
 import os
 
 # --- Configuration ---
-DB_PATH = os.getenv('DB_PATH', '../reviews.db')  # Use env var or default relative path
+DB_PATH = "/app/database/reviews.db"# Use env var or default relative path
 APPS_TO_SCRAPE = {
     'AliExpress': 'com.alibaba.aliexpresshd',
     'Alibaba': 'com.alibaba.intl.android.apps.poseidon',

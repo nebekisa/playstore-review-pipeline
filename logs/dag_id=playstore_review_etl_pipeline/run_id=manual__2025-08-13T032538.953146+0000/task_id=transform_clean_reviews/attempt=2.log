@@ -1,0 +1,60 @@
+[2025-08-13T03:28:27.618+0000] {local_task_job_runner.py:120} INFO - ::group::Pre task execution logs
+[2025-08-13T03:28:27.682+0000] {taskinstance.py:2076} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: playstore_review_etl_pipeline.transform_clean_reviews manual__2025-08-13T03:25:38.953146+00:00 [queued]>
+[2025-08-13T03:28:27.703+0000] {taskinstance.py:2076} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: playstore_review_etl_pipeline.transform_clean_reviews manual__2025-08-13T03:25:38.953146+00:00 [queued]>
+[2025-08-13T03:28:27.706+0000] {taskinstance.py:2306} INFO - Starting attempt 2 of 3
+[2025-08-13T03:28:27.736+0000] {taskinstance.py:2330} INFO - Executing <Task(PythonOperator): transform_clean_reviews> on 2025-08-13 03:25:38.953146+00:00
+[2025-08-13T03:28:27.757+0000] {standard_task_runner.py:90} INFO - Running: ['***', 'tasks', 'run', 'playstore_review_etl_pipeline', 'transform_clean_reviews', 'manual__2025-08-13T03:25:38.953146+00:00', '--job-id', '67', '--raw', '--subdir', 'DAGS_FOLDER/my_pipeline.py', '--cfg-path', '/tmp/tmprdd0_ic9']
+[2025-08-13T03:28:27.766+0000] {standard_task_runner.py:91} INFO - Job 67: Subtask transform_clean_reviews
+[2025-08-13T03:28:27.775+0000] {logging_mixin.py:188} WARNING - /home/***/.local/lib/python3.12/site-packages/***/task/task_runner/standard_task_runner.py:61 DeprecationWarning: This process (pid=269) is multi-threaded, use of fork() may lead to deadlocks in the child.
+[2025-08-13T03:28:27.777+0000] {standard_task_runner.py:63} INFO - Started process 271 to run task
+[2025-08-13T03:28:27.879+0000] {task_command.py:426} INFO - Running <TaskInstance: playstore_review_etl_pipeline.transform_clean_reviews manual__2025-08-13T03:25:38.953146+00:00 [running]> on host 58ba035f0912
+[2025-08-13T03:28:28.162+0000] {taskinstance.py:2648} INFO - Exporting env vars: AIRFLOW_CTX_DAG_EMAIL='your_email@domain.com' AIRFLOW_CTX_DAG_OWNER='data_engineering_team' AIRFLOW_CTX_DAG_ID='playstore_review_etl_pipeline' AIRFLOW_CTX_TASK_ID='transform_clean_reviews' AIRFLOW_CTX_EXECUTION_DATE='2025-08-13T03:25:38.953146+00:00' AIRFLOW_CTX_TRY_NUMBER='2' AIRFLOW_CTX_DAG_RUN_ID='manual__2025-08-13T03:25:38.953146+00:00'
+[2025-08-13T03:28:28.165+0000] {taskinstance.py:430} INFO - ::endgroup::
+[2025-08-13T03:28:28.195+0000] {my_pipeline.py:59} INFO - Starting Processor Task...
+[2025-08-13T03:28:28.196+0000] {my_pipeline.py:63} INFO - Calling processor.process_reviews()...
+[2025-08-13T03:28:28.196+0000] {processor.py:137} INFO - === Data Processing (NLP Cleaning) Started ===
+[2025-08-13T03:28:28.198+0000] {processor.py:35} INFO - Connected to SQLite database at /app/database/reviews.db
+[2025-08-13T03:28:28.200+0000] {processor.py:65} INFO - ProcessedAppReviews table checked/created successfully.
+[2025-08-13T03:28:28.213+0000] {processor.py:160} INFO - Loaded 300 raw reviews for processing.
+[2025-08-13T03:28:28.214+0000] {processor.py:163} INFO - Applying text cleaning and preprocessing...
+[2025-08-13T03:28:34.671+0000] {processor.py:215} ERROR - === Data Processing Failed! Error: attempt to write a readonly database ===
+Traceback (most recent call last):
+  File "/opt/airflow/processor_code/processor.py", line 203, in process_reviews
+    cursor.executemany(insert_query, records)
+sqlite3.OperationalError: attempt to write a readonly database
+[2025-08-13T03:28:34.685+0000] {processor.py:220} INFO - Database connection closed.
+[2025-08-13T03:28:34.687+0000] {my_pipeline.py:75} ERROR - Processor task failed with exception: attempt to write a readonly database
+Traceback (most recent call last):
+  File "/opt/airflow/dags/my_pipeline.py", line 64, in run_processor
+    processor_module.process_reviews()
+  File "/opt/airflow/processor_code/processor.py", line 203, in process_reviews
+    cursor.executemany(insert_query, records)
+sqlite3.OperationalError: attempt to write a readonly database
+[2025-08-13T03:28:34.699+0000] {taskinstance.py:441} INFO - ::group::Post task execution logs
+[2025-08-13T03:28:34.700+0000] {taskinstance.py:2905} ERROR - Task failed with exception
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.12/site-packages/airflow/models/taskinstance.py", line 465, in _execute_task
+    result = _execute_callable(context=context, **execute_callable_kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/airflow/.local/lib/python3.12/site-packages/airflow/models/taskinstance.py", line 432, in _execute_callable
+    return execute_callable(context=context, **execute_callable_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/airflow/.local/lib/python3.12/site-packages/airflow/models/baseoperator.py", line 400, in wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/airflow/.local/lib/python3.12/site-packages/airflow/operators/python.py", line 235, in execute
+    return_value = self.execute_callable()
+                   ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/airflow/.local/lib/python3.12/site-packages/airflow/operators/python.py", line 252, in execute_callable
+    return self.python_callable(*self.op_args, **self.op_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/airflow/dags/my_pipeline.py", line 64, in run_processor
+    processor_module.process_reviews()
+  File "/opt/airflow/processor_code/processor.py", line 203, in process_reviews
+    cursor.executemany(insert_query, records)
+sqlite3.OperationalError: attempt to write a readonly database
+[2025-08-13T03:28:34.728+0000] {taskinstance.py:1206} INFO - Marking task as UP_FOR_RETRY. dag_id=playstore_review_etl_pipeline, task_id=transform_clean_reviews, run_id=manual__2025-08-13T03:25:38.953146+00:00, execution_date=20250813T032538, start_date=20250813T032827, end_date=20250813T032834
+[2025-08-13T03:28:34.758+0000] {standard_task_runner.py:110} ERROR - Failed to execute job 67 for task transform_clean_reviews (attempt to write a readonly database; 271)
+[2025-08-13T03:28:34.849+0000] {local_task_job_runner.py:240} INFO - Task exited with return code 1
+[2025-08-13T03:28:34.886+0000] {taskinstance.py:3498} INFO - 0 downstream tasks scheduled from follow-on schedule check
+[2025-08-13T03:28:34.892+0000] {local_task_job_runner.py:222} INFO - ::endgroup::
