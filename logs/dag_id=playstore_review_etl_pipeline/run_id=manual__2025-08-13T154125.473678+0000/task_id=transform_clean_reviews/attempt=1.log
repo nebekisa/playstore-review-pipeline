@@ -1,0 +1,29 @@
+[2025-08-13T15:42:13.465+0000] {local_task_job_runner.py:120} INFO - ::group::Pre task execution logs
+[2025-08-13T15:42:13.534+0000] {taskinstance.py:2076} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: playstore_review_etl_pipeline.transform_clean_reviews manual__2025-08-13T15:41:25.473678+00:00 [queued]>
+[2025-08-13T15:42:13.553+0000] {taskinstance.py:2076} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: playstore_review_etl_pipeline.transform_clean_reviews manual__2025-08-13T15:41:25.473678+00:00 [queued]>
+[2025-08-13T15:42:13.557+0000] {taskinstance.py:2306} INFO - Starting attempt 1 of 3
+[2025-08-13T15:42:13.587+0000] {taskinstance.py:2330} INFO - Executing <Task(PythonOperator): transform_clean_reviews> on 2025-08-13 15:41:25.473678+00:00
+[2025-08-13T15:42:13.606+0000] {standard_task_runner.py:90} INFO - Running: ['***', 'tasks', 'run', 'playstore_review_etl_pipeline', 'transform_clean_reviews', 'manual__2025-08-13T15:41:25.473678+00:00', '--job-id', '99', '--raw', '--subdir', 'DAGS_FOLDER/my_pipeline.py', '--cfg-path', '/tmp/tmpukbe1j8k']
+[2025-08-13T15:42:13.613+0000] {logging_mixin.py:188} WARNING - /home/***/.local/lib/python3.12/site-packages/***/task/task_runner/standard_task_runner.py:61 DeprecationWarning: This process (pid=200) is multi-threaded, use of fork() may lead to deadlocks in the child.
+[2025-08-13T15:42:13.614+0000] {standard_task_runner.py:91} INFO - Job 99: Subtask transform_clean_reviews
+[2025-08-13T15:42:13.615+0000] {standard_task_runner.py:63} INFO - Started process 202 to run task
+[2025-08-13T15:42:13.758+0000] {task_command.py:426} INFO - Running <TaskInstance: playstore_review_etl_pipeline.transform_clean_reviews manual__2025-08-13T15:41:25.473678+00:00 [running]> on host 94cc8aee10d3
+[2025-08-13T15:42:13.963+0000] {taskinstance.py:2648} INFO - Exporting env vars: AIRFLOW_CTX_DAG_EMAIL='your_email@domain.com' AIRFLOW_CTX_DAG_OWNER='data_engineering_team' AIRFLOW_CTX_DAG_ID='playstore_review_etl_pipeline' AIRFLOW_CTX_TASK_ID='transform_clean_reviews' AIRFLOW_CTX_EXECUTION_DATE='2025-08-13T15:41:25.473678+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='manual__2025-08-13T15:41:25.473678+00:00'
+[2025-08-13T15:42:13.966+0000] {taskinstance.py:430} INFO - ::endgroup::
+[2025-08-13T15:42:13.996+0000] {my_pipeline.py:59} INFO - Starting Processor Task...
+[2025-08-13T15:42:13.998+0000] {my_pipeline.py:63} INFO - Calling processor.process_reviews()...
+[2025-08-13T15:42:13.999+0000] {processor.py:137} INFO - === Data Processing (NLP Cleaning) Started ===
+[2025-08-13T15:42:14.002+0000] {processor.py:35} INFO - Connected to SQLite database at /app/database/reviews.db
+[2025-08-13T15:42:14.005+0000] {processor.py:65} INFO - ProcessedAppReviews table checked/created successfully.
+[2025-08-13T15:42:14.062+0000] {processor.py:160} INFO - Loaded 1613 raw reviews for processing.
+[2025-08-13T15:42:14.063+0000] {processor.py:163} INFO - Applying text cleaning and preprocessing...
+[2025-08-13T15:42:22.141+0000] {logging_mixin.py:188} WARNING - /opt/***/processor_code/processor.py:82 MarkupResemblesLocatorWarning: The input looks more like a filename than markup. You may want to open this file and pass the filehandle into Beautiful Soup.
+[2025-08-13T15:42:23.123+0000] {processor.py:209} INFO - === Data Processing Completed Successfully! Duration: 0:00:09.122747, Rows Inserted: 1613 ===
+[2025-08-13T15:42:23.124+0000] {processor.py:220} INFO - Database connection closed.
+[2025-08-13T15:42:23.126+0000] {my_pipeline.py:65} INFO - Processor task completed successfully.
+[2025-08-13T15:42:23.127+0000] {python.py:237} INFO - Done. Returned value was: None
+[2025-08-13T15:42:23.128+0000] {taskinstance.py:441} INFO - ::group::Post task execution logs
+[2025-08-13T15:42:23.143+0000] {taskinstance.py:1206} INFO - Marking task as SUCCESS. dag_id=playstore_review_etl_pipeline, task_id=transform_clean_reviews, run_id=manual__2025-08-13T15:41:25.473678+00:00, execution_date=20250813T154125, start_date=20250813T154213, end_date=20250813T154223
+[2025-08-13T15:42:23.205+0000] {local_task_job_runner.py:240} INFO - Task exited with return code 0
+[2025-08-13T15:42:23.230+0000] {taskinstance.py:3498} INFO - 0 downstream tasks scheduled from follow-on schedule check
+[2025-08-13T15:42:23.236+0000] {local_task_job_runner.py:222} INFO - ::endgroup::

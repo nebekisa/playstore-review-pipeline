@@ -1,4 +1,4 @@
-# docker-compose.yml (Full, Corrected Version)
+# docker-compose.yml (Streamlined & Corrected)
 version: '3.8'
 
 services:
@@ -16,25 +16,52 @@ services:
       interval: 5s
       retries: 5
     restart: always
-  init-sqlite-dir:
-    image: busybox:latest # Lightweight image for simple tasks
-    volumes:
-      - sqlite_data:/app/database # Mount the volume
-      - ./scripts/init_sqlite_dir.sh:/init_sqlite_dir.sh:ro
-    command: ["/bin/sh", "/init_sqlite_dir.sh"]
-    user: "root:root" #
 
-  # --- Airflow Webserver ---
-  airflow-webserver:
-    build:
-      context: . # Build context is the current directory (where docker-compose.yml is)
-      dockerfile: Dockerfile.airflow # Use your custom Dockerfile
+  # --- Streamlit Dashboard ---
+  streamlit-dashboard:
+    # --- USE CUSTOM IMAGE OR INSTALL DEPS ON BUILD ---
+    # Option 1: Use a custom Streamlit image (recommended for performance/stability)
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile.streamlit # You need to create this Dockerfile
+    # Option 2: Install dependencies at runtime (simpler for dev, slower startup)
+    image: python:3.9-slim
+    # --- END IMAGE CHOICE ---
     depends_on:
       postgres:
         condition: service_healthy
-      init-sqlite-dir: # ADD DEPENDENCY
-        condition: service_completed_successfully # Wait for init to finish
+    volumes:
+      # --- CRUCIAL: Mount the SQLite data volume ---
+      # This makes the shared SQLite DB accessible inside the Streamlit container
+      # at the path your Python code expects (/app/database/reviews.db)
+      - sqlite_data:/app/database
+      # --- Mount Dashboard Code ---
+      - ./dashboard:/app/dashboard_code # Mount your local dashboard code directory
+    working_dir: /app/dashboard_code # Set working directory inside container
+    ports:
+      - "8501:8501" # Map host port 8501 to container port 8501 (Streamlit default)
+    # --- CORRECTED: Install deps and run Streamlit ---
+    # Option 1 (if using custom image): command: streamlit run dashboard.py --server.port=8501 --server.address=0.0.0.0
+    # Option 2 (if installing at runtime):
     
+    command: >
+      bash -c "
+      pip install --no-cache-dir streamlit pandas plotly matplotlib seaborn wordcloud nltk
+      streamlit run dashboard.py --server.port=8501 --server.address=0.0.0.0
+      "
+    # --- END CORRECTED ---
+    restart: always # Restart if it crashes
+
+  # --- Airflow Webserver ---
+  airflow-webserver:
+    # --- USE CUSTOM IMAGE ---
+    build:
+      context: . # Build context is the current directory
+      dockerfile: Dockerfile.airflow # Use your custom Dockerfile that installs dependencies
+    # --- END IMAGE ---
+    depends_on:
+      postgres:
+        condition: service_healthy
     environment:
       # --- Core Airflow Configuration ---
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
@@ -42,25 +69,14 @@ services:
       AIRFLOW__CORE__FERNET_KEY: ''
       AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
       AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+      # --- Pass DB Path to Python scripts ---
       DB_PATH: /app/database/reviews.db
-      # --- SMTP Configuration for Email Alerts (if needed) ---
-      # Note: Requires smtp.gmail.com access, app password, and correct network/Docker setup.
-      # AIRFLOW__SMTP__SMTP_HOST: smtp.gmail.com
-      # AIRFLOW__SMTP__SMTP_STARTTLS: 'True'
-      # AIRFLOW__SMTP__SMTP_SSL: 'False'
-      # AIRFLOW__SMTP__SMTP_USER: libekiger@gmail.com
-      # AIRFLOW__SMTP__SMTP_PASSWORD: ggxlwpmgdgbiynus # KEEP THIS SECRET!
-      # AIRFLOW__SMTP__SMTP_PORT: '587'
-      # AIRFLOW__SMTP__FROM: libekiger@gmail.com
     volumes:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
       # --- Mount SQLite Data Volume ---
-      # Shares the SQLite DB file between containers.
-      # Ensure tasks inside containers use the path '/app/database/reviews.db'
       - sqlite_data:/app/database
       # --- Mount Project Code (Scraper/Processor) ---
-      # Makes your local code available inside the Airflow containers.
       - ./scraper:/opt/airflow/scraper_code
       - ./processor:/opt/airflow/processor_code
     user: "50000:50000"
@@ -71,15 +87,14 @@ services:
 
   # --- Airflow Scheduler ---
   airflow-scheduler:
+    # --- USE CUSTOM IMAGE ---
     build:
-      context: . # Build context is the current directory (where docker-compose.yml is)
+      context: . # Build context is the current directory
       dockerfile: Dockerfile.airflow # Use your custom Dockerfile
+    # --- END IMAGE ---
     depends_on:
       postgres:
         condition: service_healthy
-      init-sqlite-dir: # ADD DEPENDENCY
-        condition: service_completed_successfully # Wait for init to finish
-    
     environment:
       # --- Core Airflow Configuration ---
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
@@ -87,15 +102,8 @@ services:
       AIRFLOW__CORE__FERNET_KEY: ''
       AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
       AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+      # --- Pass DB Path to Python scripts ---
       DB_PATH: /app/database/reviews.db
-      # --- SMTP Configuration for Email Alerts (if needed) ---
-      # AIRFLOW__SMTP__SMTP_HOST: smtp.gmail.com
-      # AIRFLOW__SMTP__SMTP_STARTTLS: 'True'
-      # AIRFLOW__SMTP__SMTP_SSL: 'False'
-      # AIRFLOW__SMTP__SMTP_USER: libekiger@gmail.com
-      # AIRFLOW__SMTP__SMTP_PASSWORD: ggxlwpmgdgbiynus # KEEP THIS SECRET!
-      # AIRFLOW__SMTP__SMTP_PORT: '587'
-      # AIRFLOW__SMTP__FROM: libekiger@gmail.com
     volumes:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
@@ -106,17 +114,16 @@ services:
     command: scheduler
     restart: always
 
-  # --- Airflow Init (One-time setup) - SIMPLIFIED & CORRECTED ---
+  # --- Airflow Init (One-time setup) ---
   airflow-init:
+    # --- USE CUSTOM IMAGE ---
     build:
-      context: . # Build context is the current directory (where docker-compose.yml is)
+      context: . # Build context is the current directory
       dockerfile: Dockerfile.airflow # Use your custom Dockerfile
+    # --- END IMAGE ---
     depends_on:
       postgres:
         condition: service_healthy
-      init-sqlite-dir: # ADD DEPENDENCY
-        condition: service_completed_successfully # Wait for init to finish
-    
     environment:
       # --- Core Connection & Init Configuration ---
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
@@ -128,26 +135,20 @@ services:
       _AIRFLOW_WWW_USER_CREATE: 'true'
       _AIRFLOW_WWW_USER_USERNAME: admin
       _AIRFLOW_WWW_USER_PASSWORD: admin # CHANGE THIS FOR PRODUCTION!
+      # --- Pass DB Path (if needed by init scripts, though unlikely) ---
+      DB_PATH: /app/database/reviews.db
     volumes:
       - ./dags:/opt/airflow/dags
       - ./logs:/opt/airflow/logs
-      # If you need shared data/code mounted for init, add it here too.
-      - sqlite_data:/app/database
+      - sqlite_data:/app/database # Share SQLite DB volume (if init needs it)
       - ./scraper:/opt/airflow/scraper_code
       - ./processor:/opt/airflow/processor_code
     user: "50000:50000"
     # --- Use Airflow's standard entrypoint which handles _AIRFLOW_* env vars ---
-    # This should work correctly with Airflow 2.9.1 image
     # No need to override entrypoint/command manually anymore
-    # The 'restart: "no"' ensures it only runs once.
     restart: "no" # Run only once
-  # --- End of Airflow Init ---
 
 # --- Define Volumes (Must be top-level) ---
 volumes:
   postgres_db_volume:
   sqlite_data: # Volume for SQLite database file
-
-# --- REMOVED INVALID ROOT-LEVEL ENVIRONMENT SECTION ---
-# Environment variables must be defined within a specific service.
-# The SMTP settings are already included in the webserver/scheduler services above.

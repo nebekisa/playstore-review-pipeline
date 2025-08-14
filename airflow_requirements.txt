@@ -1,7 +1,14 @@
 # airflow_requirements.txt
+# Dependencies for the Scraper task
 google-play-scraper>=1.0.0
+
+# Dependencies for the Processor task
 pandas>=1.3.0
 nltk>=3.6.0
 beautifulsoup4>=4.10.0
 contractions>=0.1.0
-# Add any other dependencies your tasks need
+textblob>=0.17.0
+vaderSentiment>=3.3.0
+
+# Add any other dependencies your DAG or tasks might need directly
+# (e.g., if you add analysis tasks later)
