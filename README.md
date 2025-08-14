@@ -43,112 +43,6 @@ This project was developed as part of a Data Science & Engineering curriculum ch
 *   **Databases:** SQLite
 
 ## 📁 Project Structure
-profile
-Qwen3-Coder 12:54 am
-
-Okay, based on your project's current state (Airflow ETL pipeline, Streamlit dashboard, SQLite database) and the documents provided (sample Challenge.pdf, Data Science Project Guidline.pdf), here's a professional README.md file for your GitHub repository. 
- 
-README.md 
-markdown
- 
- 
-1
-2
-3
-4
-5
-6
-7
-8
-9
-10
-11
-12
-13
-14
-15
-16
-17
-18
-19
-20
-21
-22
-23
-24
-25
-26
-27
-28
-29
-30
-31
-32
-33
-34
-35
-36
-37
-38
-39
-40
-41
-42
-43
-44
-45
-46
-⌄
-⌄
-⌄
-⌄
-⌄
-⌄
-⌄
-# 🛍️ E-commerce App Review Analysis Pipeline
-
-[![Python](https://img.shields.io/badge/Python-3.9%2B-blue.svg)](https://www.python.org/downloads/)
-[![Apache%20Airflow](https://img.shields.io/badge/Apache%20Airflow-2.9.1-orange.svg)](https://airflow.apache.org/)
-[![Streamlit](https://img.shields.io/badge/Streamlit-1.28.0-red.svg)](https://streamlit.io/)
-[![Docker](https://img.shields.io/badge/Docker-20.10.0%2B-blue.svg)](https://www.docker.com/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
-
-This project implements a complete **end-to-end data engineering pipeline** designed to automatically scrape, process, store, and visualize customer reviews for popular e-commerce applications (AliExpress, Alibaba, Jiji) from the Google Play Store. It leverages modern tools like Docker, Apache Airflow, SQLite, and Streamlit to create a robust, automated, and interactive system for gaining insights into user sentiment and behavior.
-
-## 📌 Project Overview
-
-The goal of this project is to extract, analyze, and visualize customer sentiment and insights from Google Play Store reviews of e-commerce apps. This pipeline addresses common data science challenges like web scraping, data cleaning, natural language processing (NLP), statistical modeling, and creating interactive dashboards, providing a comprehensive solution from raw data to actionable insights.
-
-This project was developed as part of a Data Science & Engineering curriculum challenge, fulfilling the requirements outlined in `sample Challenge.pdf` and `Data Science Project Guidline.pdf`.
-
-## 🔧 Features & Architecture
-
-*   **Automated Data Ingestion:** Scrapes reviews from the Google Play Store for specified apps on a schedule.
-*   **Data Storage:** Uses SQLite for lightweight, file-based storage of raw and processed review data.
-*   **Data Cleaning & Preprocessing:** Applies NLP techniques (tokenization, stopword removal, lemmatization) to clean review text.
-*   **Sentiment Analysis:** Employs VADER (Valence Aware Dictionary and sEntiment Reasoner) for rule-based sentiment classification of reviews.
-*   **Orchestration:** Apache Airflow manages and schedules the entire ETL (Extract, Transform, Load) workflow.
-*   **Interactive Dashboard:** A Streamlit web application provides an intuitive interface to explore key findings, visualize trends, and view example reviews.
-*   **Professional Practices:** Incorporates error handling, logging, data quality checks, and modular code structure.
-
-## 🛠️ Technologies Used
-
-*   **Languages:** Python
-*   **Libraries & Frameworks:**
-    *   `google-play-scraper`: For scraping Google Play Store reviews.
-    *   `pandas`, `numpy`: For data manipulation and analysis.
-    *   `sqlite3`: For database interaction.
-    *   `nltk`, `beautifulsoup4`, `contractions`, `vaderSentiment`: For NLP tasks (cleaning, sentiment analysis).
-    *   `matplotlib`, `seaborn`, `plotly`, `wordcloud`: For static and interactive data visualizations.
-    *   `streamlit`: For building the interactive web dashboard.
-    *   `apache-airflow`: For workflow orchestration.
-*   **Tools & Platforms:**
-    *   Docker & Docker Compose: For containerization and environment management.
-    *   Git & GitHub: For version control.
-    *   Visual Studio Code / Jupyter Notebook: For development.
-*   **Databases:** SQLite
-
-## 📁 Project Structure
 
  
  
@@ -242,3 +136,4 @@ The interactive Streamlit dashboard allows users to explore insights for each ap
 *   **Review Characteristics:** Found correlations between review length, rating, and sentiment (e.g., negative reviews often being longer).
 
 ## 🤝 Contributing
+
