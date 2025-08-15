@@ -4612,3 +4612,21 @@ NameError: name 'PythonOperator' is not defined
 [2025-08-15T05:01:38.424+0000] {logging_mixin.py:188} INFO - [2025-08-15T05:01:38.423+0000] {dag.py:3096} INFO - Sync 1 DAGs
 [2025-08-15T05:01:38.474+0000] {logging_mixin.py:188} INFO - [2025-08-15T05:01:38.473+0000] {dag.py:3954} INFO - Setting next_dagrun for playstore_review_etl_pipeline to 2025-08-15 00:00:00+00:00, run_after=2025-08-16 00:00:00+00:00
 [2025-08-15T05:01:38.516+0000] {processor.py:183} INFO - Processing /opt/airflow/dags/my_pipeline.py took 2.658 seconds
+[2025-08-15T05:02:09.251+0000] {processor.py:161} INFO - Started process (PID=425) to work on /opt/airflow/dags/my_pipeline.py
+[2025-08-15T05:02:09.255+0000] {processor.py:830} INFO - Processing file /opt/airflow/dags/my_pipeline.py for tasks to queue
+[2025-08-15T05:02:09.264+0000] {logging_mixin.py:188} INFO - [2025-08-15T05:02:09.263+0000] {dagbag.py:545} INFO - Filling up the DagBag from /opt/airflow/dags/my_pipeline.py
+[2025-08-15T05:02:09.379+0000] {logging_mixin.py:188} INFO - [2025-08-15T05:02:09.379+0000] {my_pipeline.py:35} INFO - Successfully imported module: scraper
+[2025-08-15T05:02:11.264+0000] {logging_mixin.py:188} INFO - [2025-08-15T05:02:11.263+0000] {my_pipeline.py:35} INFO - Successfully imported module: processor
+[2025-08-15T05:02:11.277+0000] {processor.py:840} INFO - DAG(s) 'playstore_review_etl_pipeline' retrieved from /opt/airflow/dags/my_pipeline.py
+[2025-08-15T05:02:11.323+0000] {logging_mixin.py:188} INFO - [2025-08-15T05:02:11.321+0000] {dag.py:3096} INFO - Sync 1 DAGs
+[2025-08-15T05:02:11.363+0000] {logging_mixin.py:188} INFO - [2025-08-15T05:02:11.362+0000] {dag.py:3954} INFO - Setting next_dagrun for playstore_review_etl_pipeline to 2025-08-15 00:00:00+00:00, run_after=2025-08-16 00:00:00+00:00
+[2025-08-15T05:02:11.403+0000] {processor.py:183} INFO - Processing /opt/airflow/dags/my_pipeline.py took 2.179 seconds
+[2025-08-15T05:02:41.932+0000] {processor.py:161} INFO - Started process (PID=431) to work on /opt/airflow/dags/my_pipeline.py
+[2025-08-15T05:02:41.934+0000] {processor.py:830} INFO - Processing file /opt/airflow/dags/my_pipeline.py for tasks to queue
+[2025-08-15T05:02:41.939+0000] {logging_mixin.py:188} INFO - [2025-08-15T05:02:41.938+0000] {dagbag.py:545} INFO - Filling up the DagBag from /opt/airflow/dags/my_pipeline.py
+[2025-08-15T05:02:42.017+0000] {logging_mixin.py:188} INFO - [2025-08-15T05:02:42.017+0000] {my_pipeline.py:35} INFO - Successfully imported module: scraper
+[2025-08-15T05:02:43.662+0000] {logging_mixin.py:188} INFO - [2025-08-15T05:02:43.662+0000] {my_pipeline.py:35} INFO - Successfully imported module: processor
+[2025-08-15T05:02:43.681+0000] {processor.py:840} INFO - DAG(s) 'playstore_review_etl_pipeline' retrieved from /opt/airflow/dags/my_pipeline.py
+[2025-08-15T05:02:43.732+0000] {logging_mixin.py:188} INFO - [2025-08-15T05:02:43.731+0000] {dag.py:3096} INFO - Sync 1 DAGs
+[2025-08-15T05:02:43.768+0000] {logging_mixin.py:188} INFO - [2025-08-15T05:02:43.767+0000] {dag.py:3954} INFO - Setting next_dagrun for playstore_review_etl_pipeline to 2025-08-15 00:00:00+00:00, run_after=2025-08-16 00:00:00+00:00
+[2025-08-15T05:02:43.805+0000] {processor.py:183} INFO - Processing /opt/airflow/dags/my_pipeline.py took 1.888 seconds
