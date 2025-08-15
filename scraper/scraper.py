@@ -26,7 +26,22 @@ logger = logging.getLogger(__name__)
 # However, conditional imports can be useful for handling missing dependencies gracefully.
 # For this script, we assume it's a dependency.
 from google_play_scraper import reviews, Sort
-
+def create_metadata_table_if_not_exists(conn):
+    """Creates the AppScrapingMetadata table if it doesn't already exist."""
+    create_table_sql = """
+    CREATE TABLE IF NOT EXISTS AppScrapingMetadata (
+        AppName TEXT PRIMARY KEY, -- Unique identifier for each app
+        LastScrapedAt DATETIME NOT NULL -- Timestamp of the last successful scrape for this app
+    );
+    """
+    try:
+        cursor = conn.cursor()
+        cursor.execute(create_table_sql)
+        conn.commit()
+        logger.info("AppScrapingMetadata table checked/created successfully.")
+    except Exception as e:
+         logger.error(f"Error creating/checking AppScrapingMetadata table: {e}")
+         raise
 
 def get_db_connection():
     """Establishes and returns a connection to the SQLite database."""
@@ -34,6 +49,7 @@ def get_db_connection():
         conn = sqlite3.connect(DB_PATH)
         # Enable foreign key constraints (good practice, though not used in this specific table)
         conn.execute('PRAGMA foreign_keys = ON')
+        create_metadata_table_if_not_exists(conn)
         logger.info(f"Connected to SQLite database at {DB_PATH}")
         return conn
     except sqlite3.Error as e:
@@ -77,28 +93,44 @@ def create_raw_table_if_not_exists(conn):
          raise
 
 def scrape_and_store_reviews(app_name, app_id, conn, max_reviews):
-    """Scrapes reviews and stores them in SQLite, handling duplicates."""
-    logger.info(f"Starting to scrape reviews for {app_name} ({app_id}) - Max Reviews: {max_reviews}")
+    """
+    Scrapes reviews using google-play-scraper incrementally and inserts them into SQLite.
+    Only fetches reviews newer than the last scraped timestamp for the app.
+    """
+    logger.info(f"Starting to scrape reviews for {app_name} ({app_id})...")
     cursor = conn.cursor()
 
-    # Ensure table exists before inserting
-    create_raw_table_if_not_exists(conn)
+    # --- 1. Get Last Scraped Timestamp for this App ---
+    last_scraped_at = None
+    try:
+        cursor.execute("SELECT LastScrapedAt FROM AppScrapingMetadata WHERE AppName = ?", (app_name,))
+        result = cursor.fetchone()
+        if result:
+            last_scraped_at = result[0]
+            logger.info(f"  Last scraped timestamp for {app_name}: {last_scraped_at}")
+        else:
+            logger.info(f"  No previous scrape record found for {app_name}. Will scrape all available reviews up to max_reviews.")
+    except Exception as e:
+        logger.warning(f"  Could not retrieve last scraped timestamp for {app_name}: {e}. Assuming full scrape is needed.")
 
-    # Initial request
+    # --- 2. Scrape Reviews (Incrementally) ---
+    # Initial request, sorted by NEWEST
     result, continuation_token = reviews(
         app_id,
         lang='en',
         country='us',
         sort=Sort.NEWEST, # Start with newest
-        count=min(BATCH_SIZE, max_reviews) # Max 100 per request
+        count=min(100, max_reviews) # Max 100 per request
     )
 
     total_reviews_scraped = 0
-    total_reviews_inserted = 0 # Track actual inserts
     batch_number = 1
+    current_run_max_review_date = None # Track the latest review date encountered in *this run*
+    new_reviews_found = False # Flag to check if any new reviews were found
 
     while result and total_reviews_scraped < max_reviews:
         logger.info(f"  Processing batch {batch_number} for {app_name}...")
+        batch_reviews_to_insert = []
         for review in result:
             play_store_review_id = review.get('reviewId')
             user_name = review.get('userName')
@@ -111,84 +143,67 @@ def scrape_and_store_reviews(app_name, app_id, conn, max_reviews):
             review_date = review.get('at') # This is a datetime object
             reply_content = review.get('replyContent')
             replied_at = review.get('repliedAt')
-            scraped_at = datetime.utcnow() # Use UTC for consistency
+            scraped_at = datetime.now() # Timestamp when this review was scraped *this time*
 
-            # --- Data Quality Checks for Raw Data ---
-            is_valid = True
-            errors = []
+            # --- CRUCIAL: Check for Incrementality ---
+            # If we have a last_scraped_at timestamp and this review's date is older, stop scraping
+            if last_scraped_at and review_date and review_date <= pd.to_datetime(last_scraped_at):
+                logger.info(f"    Stopping scrape for {app_name} at review dated {review_date} (<= last scraped {last_scraped_at}).")
+                break # Stop processing this batch and exit the outer loop
 
-            # 1. Check for essential fields
-            if not play_store_review_id:
-                is_valid = False
-                errors.append("Missing PlayStoreReviewID")
-            if not isinstance(review_text, str) or not review_text.strip():
-                is_valid = False
-                errors.append("Missing or empty ReviewText")
-            if rating is None or not (isinstance(rating, int) and 1 <= rating <= 5):
-                is_valid = False
-                errors.append(f"Invalid Rating: {rating}")
+            new_reviews_found = True # At least one review passed the date check
 
-            # 2. Check ReviewDate (optional but good practice)
-            # Ensure it's a datetime object or can be parsed
-            if review_date and not isinstance(review_date, datetime):
-                # Attempt to parse if it's a string (unlikely from google-play-scraper, but defensive)
-                try:
-                    review_date = pd.to_datetime(review_date) # This requires pandas, remove if not needed
-                except (NameError, ValueError, TypeError): # NameError if pd not imported, ValueError/TypeError if parsing fails
-                    # If parsing fails or pandas not available, log warning but don't discard if other data is okay
-                    logger.warning(f"    Unparsable ReviewDate for review {play_store_review_id}: {review_date}. Keeping review.")
-                    # Optionally set review_date to None or current time if parsing fails critically
-                    # review_date = None # Or datetime.utcnow()
+            # Track the latest review date in this run to update metadata later
+            if review_date:
+                if current_run_max_review_date is None or review_date > current_run_max_review_date:
+                    current_run_max_review_date = review_date
 
-            # 3. Check for future dates (optional)
-            if review_date and review_date > datetime.utcnow():
-                logger.warning(f"    Future ReviewDate found for review {play_store_review_id}: {review_date}. Keeping review.")
+            # Prepare record for batch insert
+            record = (
+                app_name, play_store_review_id, user_name, user_image_url,
+                review_title, review_text, rating, thumbs_up_count, app_version,
+                review_date, reply_content, replied_at, scraped_at
+            )
+            batch_reviews_to_insert.append(record)
+            total_reviews_scraped += 1
 
-            # --- END Data Quality Checks ---
-
-            if not is_valid:
-                logger.warning(f"    Skipping invalid review {play_store_review_id} for {app_name}. Errors: {', '.join(errors)}")
-                continue # Skip inserting this review
-
-            # --- Proceed with Insertion if Valid ---
-            insert_sql = """
+        # --- 3. Insert Batch (if any new reviews were found) ---
+        if batch_reviews_to_insert:
+            logger.info(f"    Inserting batch {batch_number} ({len(batch_reviews_to_insert)} reviews) for {app_name}...")
+            insert_query = """
             INSERT OR IGNORE INTO RawAppReviews
             (AppName, PlayStoreReviewID, UserName, UserImageURL, ReviewTitle,
              ReviewText, Rating, ThumbsUpCount, AppVersion, ReviewDate,
              ReplyContent, RepliedAt, ScrapedAt)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """
-
             try:
-                cursor.execute(insert_sql, (
-                    app_name, play_store_review_id, user_name, user_image_url,
-                    review_title, review_text, rating, thumbs_up_count, app_version,
-                    review_date, reply_content, replied_at, scraped_at
-                ))
-                # conn.commit() is called after the batch for better performance
-                total_reviews_inserted += 1 # Increment only if insertion was attempted (even if IGNOREd)
-
-            except sqlite3.IntegrityError as e:
-                # This usually happens if the UNIQUE constraint on PlayStoreReviewID fails (duplicate)
-                if "duplicate" in str(e).lower() or "unique" in str(e).lower():
-                    logger.debug(f"    Duplicate Review ID {play_store_review_id} found for {app_name}, skipping.")
-                else:
-                    logger.error(f"    Integrity Error inserting review {play_store_review_id}: {e}")
+                cursor.executemany(insert_query, batch_reviews_to_insert)
+                conn.commit()
+                logger.info(f"    Batch {batch_number} inserted successfully for {app_name}.")
             except Exception as e:
-                logger.error(f"    General Error inserting review {play_store_review_id}: {e}")
-                # Depending on the error, you might want to continue or raise
+                logger.error(f"    Error inserting batch {batch_number} for {app_name}: {e}")
+                conn.rollback() # Rollback on error for this batch
+                # Depending on severity, you might want to raise or continue
 
-            total_reviews_scraped += 1
+        # --- 4. Check Stop Condition ---
+        # If we stopped adding reviews due to date check, break
+        if last_scraped_at and (not new_reviews_found or (current_run_max_review_date and current_run_max_review_date <= pd.to_datetime(last_scraped_at))):
+             logger.info(f"    No more new reviews found for {app_name} based on date check. Stopping scrape.")
+             break
 
-        # Commit after processing a batch
-        conn.commit()
-        logger.info(f"    Inserted batch {batch_number}. Reviews processed so far: {total_reviews_scraped}, New inserts: {total_reviews_inserted}")
-
-        if continuation_token is None or total_reviews_scraped >= max_reviews:
+        # If we've hit the max_reviews limit, break
+        if total_reviews_scraped >= max_reviews:
+            logger.info(f"    Reached max_reviews limit ({max_reviews}) for {app_name}. Stopping scrape.")
             break
 
-        logger.info(f"  Pausing for {DELAY_BETWEEN_BATCHES} second(s)...")
-        time.sleep(DELAY_BETWEEN_BATCHES)
+        # --- 5. Prepare for Next Batch ---
+        if continuation_token is None:
+            logger.info(f"    No more pages available for {app_name}. Stopping scrape.")
+            break
+
+        logger.info(f"    Pausing for 1 second before fetching next batch...")
+        time.sleep(1) # Be respectful
 
         remaining_reviews = max_reviews - total_reviews_scraped
         result, continuation_token = reviews(
@@ -197,13 +212,25 @@ def scrape_and_store_reviews(app_name, app_id, conn, max_reviews):
             lang='en',
             country='us',
             sort=Sort.NEWEST,
-            count=min(BATCH_SIZE, remaining_reviews)
+            count=min(100, remaining_reviews)
         )
         batch_number += 1
 
-    logger.info(f"--- Finished scraping for {app_name}. Total reviews processed: {total_reviews_scraped}, New inserts: {total_reviews_inserted} ---")
-    return total_reviews_inserted # Return count for potential use later
+    # --- 6. Update Last Scraped Timestamp (if new reviews were found) ---
+    if new_reviews_found and current_run_max_review_date:
+        try:
+            update_metadata_query = """
+            INSERT OR REPLACE INTO AppScrapingMetadata (AppName, LastScrapedAt)
+            VALUES (?, ?)
+            """
+            cursor.execute(update_metadata_query, (app_name, current_run_max_review_date))
+            conn.commit()
+            logger.info(f"  Updated LastScrapedAt for {app_name} to {current_run_max_review_date}.")
+        except Exception as e:
+            logger.error(f"  Error updating LastScrapedAt for {app_name}: {e}")
 
+    logger.info(f"--- Finished scraping for {app_name}. Total new reviews scraped/inserted: {total_reviews_scraped} ---")
+    return total_reviews_scraped # Return count for potential use later
 
 def main():
     """Main function to orchestrate the scraping process."""
