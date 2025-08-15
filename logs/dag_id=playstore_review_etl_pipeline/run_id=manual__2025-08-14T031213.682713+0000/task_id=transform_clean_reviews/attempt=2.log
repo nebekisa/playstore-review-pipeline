@@ -1,0 +1,73 @@
+[2025-08-14T03:15:06.480+0000] {local_task_job_runner.py:120} INFO - ::group::Pre task execution logs
+[2025-08-14T03:15:06.550+0000] {taskinstance.py:2076} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: playstore_review_etl_pipeline.transform_clean_reviews manual__2025-08-14T03:12:13.682713+00:00 [queued]>
+[2025-08-14T03:15:06.567+0000] {taskinstance.py:2076} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: playstore_review_etl_pipeline.transform_clean_reviews manual__2025-08-14T03:12:13.682713+00:00 [queued]>
+[2025-08-14T03:15:06.569+0000] {taskinstance.py:2306} INFO - Starting attempt 2 of 3
+[2025-08-14T03:15:06.596+0000] {taskinstance.py:2330} INFO - Executing <Task(PythonOperator): transform_clean_reviews> on 2025-08-14 03:12:13.682713+00:00
+[2025-08-14T03:15:06.614+0000] {standard_task_runner.py:90} INFO - Running: ['***', 'tasks', 'run', 'playstore_review_etl_pipeline', 'transform_clean_reviews', 'manual__2025-08-14T03:12:13.682713+00:00', '--job-id', '113', '--raw', '--subdir', 'DAGS_FOLDER/my_pipeline.py', '--cfg-path', '/tmp/tmpf0gt5_cv']
+[2025-08-14T03:15:06.622+0000] {standard_task_runner.py:91} INFO - Job 113: Subtask transform_clean_reviews
+[2025-08-14T03:15:06.623+0000] {logging_mixin.py:188} WARNING - /home/***/.local/lib/python3.12/site-packages/***/task/task_runner/standard_task_runner.py:61 DeprecationWarning: This process (pid=230) is multi-threaded, use of fork() may lead to deadlocks in the child.
+[2025-08-14T03:15:06.624+0000] {standard_task_runner.py:63} INFO - Started process 232 to run task
+[2025-08-14T03:15:06.739+0000] {task_command.py:426} INFO - Running <TaskInstance: playstore_review_etl_pipeline.transform_clean_reviews manual__2025-08-14T03:12:13.682713+00:00 [running]> on host 7a3ddec03acc
+[2025-08-14T03:15:06.915+0000] {taskinstance.py:2648} INFO - Exporting env vars: AIRFLOW_CTX_DAG_EMAIL='your_email@domain.com' AIRFLOW_CTX_DAG_OWNER='data_engineering_team' AIRFLOW_CTX_DAG_ID='playstore_review_etl_pipeline' AIRFLOW_CTX_TASK_ID='transform_clean_reviews' AIRFLOW_CTX_EXECUTION_DATE='2025-08-14T03:12:13.682713+00:00' AIRFLOW_CTX_TRY_NUMBER='2' AIRFLOW_CTX_DAG_RUN_ID='manual__2025-08-14T03:12:13.682713+00:00'
+[2025-08-14T03:15:06.917+0000] {taskinstance.py:430} INFO - ::endgroup::
+[2025-08-14T03:15:06.942+0000] {my_pipeline.py:78} INFO - Starting Processor Task...
+[2025-08-14T03:15:06.943+0000] {my_pipeline.py:83} INFO - Calling processor.process_reviews()...
+[2025-08-14T03:15:06.943+0000] {processor.py:193} INFO - === Data Processing (NLP Cleaning & VADER Sentiment) Started ===
+[2025-08-14T03:15:06.945+0000] {processor.py:57} INFO - Connected to SQLite database at /app/database/reviews.db
+[2025-08-14T03:15:06.947+0000] {processor.py:89} INFO - ProcessedAppReviews table checked/created successfully.
+[2025-08-14T03:15:06.975+0000] {processor.py:216} INFO - Loaded 1747 raw reviews for processing.
+[2025-08-14T03:15:06.976+0000] {processor.py:219} INFO - Applying text cleaning and preprocessing...
+[2025-08-14T03:15:11.591+0000] {logging_mixin.py:188} WARNING - /opt/***/processor_code/processor.py:111 MarkupResemblesLocatorWarning: The input looks more like a filename than markup. You may want to open this file and pass the filehandle into Beautiful Soup.
+[2025-08-14T03:15:11.892+0000] {processor.py:221} INFO - Text cleaning and preprocessing completed.
+[2025-08-14T03:15:11.893+0000] {processor.py:224} INFO - Calculating review word counts...
+[2025-08-14T03:15:11.896+0000] {processor.py:226} INFO - Review word counts calculated.
+[2025-08-14T03:15:11.897+0000] {processor.py:229} INFO - Applying VADER sentiment analysis...
+[2025-08-14T03:15:11.968+0000] {processor.py:232} INFO - VADER sentiment analysis completed.
+[2025-08-14T03:15:11.969+0000] {processor.py:235} INFO - Deriving YearMonth...
+[2025-08-14T03:15:11.976+0000] {processor.py:238} INFO - YearMonth derived.
+[2025-08-14T03:15:11.976+0000] {processor.py:241} INFO - Preparing data for insertion into ProcessedAppReviews table...
+[2025-08-14T03:15:11.985+0000] {processor.py:258} INFO - Prepared 1747 records for insertion.
+[2025-08-14T03:15:11.986+0000] {processor.py:269} INFO - Inserting processed data into ProcessedAppReviews table...
+[2025-08-14T03:15:11.987+0000] {processor.py:280} ERROR - === Data Processing Failed! Error: Error binding parameter 5: type 'Timestamp' is not supported ===
+Traceback (most recent call last):
+  File "/opt/airflow/processor_code/processor.py", line 270, in process_reviews
+    cursor.executemany(insert_query, records)
+sqlite3.ProgrammingError: Error binding parameter 5: type 'Timestamp' is not supported
+[2025-08-14T03:15:11.994+0000] {processor.py:285} INFO - Database connection closed.
+[2025-08-14T03:15:11.994+0000] {my_pipeline.py:95} ERROR - Processor task failed with exception: Error binding parameter 5: type 'Timestamp' is not supported
+Traceback (most recent call last):
+  File "/opt/airflow/dags/my_pipeline.py", line 84, in run_processor
+    processor_module.process_reviews() # Execute the processing logic
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/airflow/processor_code/processor.py", line 270, in process_reviews
+    cursor.executemany(insert_query, records)
+sqlite3.ProgrammingError: Error binding parameter 5: type 'Timestamp' is not supported
+[2025-08-14T03:15:12.001+0000] {taskinstance.py:441} INFO - ::group::Post task execution logs
+[2025-08-14T03:15:12.001+0000] {taskinstance.py:2905} ERROR - Task failed with exception
+Traceback (most recent call last):
+  File "/home/airflow/.local/lib/python3.12/site-packages/airflow/models/taskinstance.py", line 465, in _execute_task
+    result = _execute_callable(context=context, **execute_callable_kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/airflow/.local/lib/python3.12/site-packages/airflow/models/taskinstance.py", line 432, in _execute_callable
+    return execute_callable(context=context, **execute_callable_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/airflow/.local/lib/python3.12/site-packages/airflow/models/baseoperator.py", line 400, in wrapper
+    return func(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/airflow/.local/lib/python3.12/site-packages/airflow/operators/python.py", line 235, in execute
+    return_value = self.execute_callable()
+                   ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/airflow/.local/lib/python3.12/site-packages/airflow/operators/python.py", line 252, in execute_callable
+    return self.python_callable(*self.op_args, **self.op_kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/airflow/dags/my_pipeline.py", line 84, in run_processor
+    processor_module.process_reviews() # Execute the processing logic
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/airflow/processor_code/processor.py", line 270, in process_reviews
+    cursor.executemany(insert_query, records)
+sqlite3.ProgrammingError: Error binding parameter 5: type 'Timestamp' is not supported
+[2025-08-14T03:15:12.014+0000] {taskinstance.py:1206} INFO - Marking task as UP_FOR_RETRY. dag_id=playstore_review_etl_pipeline, task_id=transform_clean_reviews, run_id=manual__2025-08-14T03:12:13.682713+00:00, execution_date=20250814T031213, start_date=20250814T031506, end_date=20250814T031512
+[2025-08-14T03:15:12.028+0000] {standard_task_runner.py:110} ERROR - Failed to execute job 113 for task transform_clean_reviews (Error binding parameter 5: type 'Timestamp' is not supported; 232)
+[2025-08-14T03:15:12.068+0000] {local_task_job_runner.py:240} INFO - Task exited with return code 1
+[2025-08-14T03:15:12.095+0000] {taskinstance.py:3498} INFO - 0 downstream tasks scheduled from follow-on schedule check
+[2025-08-14T03:15:12.101+0000] {local_task_job_runner.py:222} INFO - ::endgroup::

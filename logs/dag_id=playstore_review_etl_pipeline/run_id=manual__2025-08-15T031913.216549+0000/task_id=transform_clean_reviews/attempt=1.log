@@ -1,0 +1,42 @@
+[2025-08-15T03:20:06.144+0000] {local_task_job_runner.py:120} INFO - ::group::Pre task execution logs
+[2025-08-15T03:20:06.205+0000] {taskinstance.py:2076} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: playstore_review_etl_pipeline.transform_clean_reviews manual__2025-08-15T03:19:13.216549+00:00 [queued]>
+[2025-08-15T03:20:06.221+0000] {taskinstance.py:2076} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: playstore_review_etl_pipeline.transform_clean_reviews manual__2025-08-15T03:19:13.216549+00:00 [queued]>
+[2025-08-15T03:20:06.224+0000] {taskinstance.py:2306} INFO - Starting attempt 1 of 3
+[2025-08-15T03:20:06.250+0000] {taskinstance.py:2330} INFO - Executing <Task(PythonOperator): transform_clean_reviews> on 2025-08-15 03:19:13.216549+00:00
+[2025-08-15T03:20:06.268+0000] {standard_task_runner.py:90} INFO - Running: ['***', 'tasks', 'run', 'playstore_review_etl_pipeline', 'transform_clean_reviews', 'manual__2025-08-15T03:19:13.216549+00:00', '--job-id', '133', '--raw', '--subdir', 'DAGS_FOLDER/my_pipeline.py', '--cfg-path', '/tmp/tmpo8txb423']
+[2025-08-15T03:20:06.275+0000] {standard_task_runner.py:91} INFO - Job 133: Subtask transform_clean_reviews
+[2025-08-15T03:20:06.276+0000] {logging_mixin.py:188} WARNING - /home/***/.local/lib/python3.12/site-packages/***/task/task_runner/standard_task_runner.py:61 DeprecationWarning: This process (pid=227) is multi-threaded, use of fork() may lead to deadlocks in the child.
+[2025-08-15T03:20:06.277+0000] {standard_task_runner.py:63} INFO - Started process 229 to run task
+[2025-08-15T03:20:06.361+0000] {task_command.py:426} INFO - Running <TaskInstance: playstore_review_etl_pipeline.transform_clean_reviews manual__2025-08-15T03:19:13.216549+00:00 [running]> on host b7996ea0eba6
+[2025-08-15T03:20:06.567+0000] {taskinstance.py:2648} INFO - Exporting env vars: AIRFLOW_CTX_DAG_EMAIL='your_email@domain.com' AIRFLOW_CTX_DAG_OWNER='data_engineering_team' AIRFLOW_CTX_DAG_ID='playstore_review_etl_pipeline' AIRFLOW_CTX_TASK_ID='transform_clean_reviews' AIRFLOW_CTX_EXECUTION_DATE='2025-08-15T03:19:13.216549+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='manual__2025-08-15T03:19:13.216549+00:00'
+[2025-08-15T03:20:06.572+0000] {taskinstance.py:430} INFO - ::endgroup::
+[2025-08-15T03:20:06.613+0000] {my_pipeline.py:78} INFO - Starting Processor Task...
+[2025-08-15T03:20:06.615+0000] {my_pipeline.py:83} INFO - Calling processor.process_reviews()...
+[2025-08-15T03:20:06.617+0000] {processor.py:209} INFO - === Data Processing (NLP Cleaning & VADER Sentiment) Started ===
+[2025-08-15T03:20:06.619+0000] {processor.py:70} INFO - Connected to SQLite database at /app/database/reviews.db
+[2025-08-15T03:20:06.624+0000] {processor.py:99} INFO - ProcessedAppReviews table checked/created successfully.
+[2025-08-15T03:20:06.625+0000] {processor.py:224} INFO - Loading raw reviews from RawAppReviews table...
+[2025-08-15T03:20:06.722+0000] {processor.py:227} INFO - Loaded 1998 raw reviews for processing.
+[2025-08-15T03:20:06.740+0000] {processor.py:237} INFO - Converted ReviewDate column to datetime.
+[2025-08-15T03:20:06.741+0000] {processor.py:240} INFO - Applying text cleaning and preprocessing...
+[2025-08-15T03:20:15.099+0000] {logging_mixin.py:188} WARNING - /opt/***/processor_code/processor.py:118 MarkupResemblesLocatorWarning: The input looks more like a filename than markup. You may want to open this file and pass the filehandle into Beautiful Soup.
+[2025-08-15T03:20:16.008+0000] {processor.py:242} INFO - Text cleaning and preprocessing completed.
+[2025-08-15T03:20:16.009+0000] {processor.py:245} INFO - Calculating review word counts...
+[2025-08-15T03:20:16.013+0000] {processor.py:247} INFO - Review word counts calculated.
+[2025-08-15T03:20:16.014+0000] {processor.py:250} INFO - Applying VADER sentiment analysis...
+[2025-08-15T03:20:53.146+0000] {processor.py:253} INFO - VADER sentiment analysis completed.
+[2025-08-15T03:20:53.148+0000] {processor.py:256} INFO - Deriving YearMonth...
+[2025-08-15T03:20:53.149+0000] {processor.py:262} INFO - YearMonth derived.
+[2025-08-15T03:20:53.151+0000] {processor.py:265} INFO - Preparing data for insertion into ProcessedAppReviews table...
+[2025-08-15T03:20:53.391+0000] {processor.py:326} INFO - Prepared 1998 records for insertion.
+[2025-08-15T03:20:53.392+0000] {processor.py:329} INFO - Inserting processed data into ProcessedAppReviews table...
+[2025-08-15T03:20:53.491+0000] {processor.py:342} INFO - Successfully inserted/updated 1998 records into ProcessedAppReviews.
+[2025-08-15T03:20:53.492+0000] {processor.py:354} INFO - === Data Processing Completed Successfully! Duration: 0:00:46.873133 ===
+[2025-08-15T03:20:53.493+0000] {processor.py:362} INFO - Database connection closed.
+[2025-08-15T03:20:53.496+0000] {my_pipeline.py:85} INFO - Processor task completed successfully.
+[2025-08-15T03:20:53.497+0000] {python.py:237} INFO - Done. Returned value was: None
+[2025-08-15T03:20:53.500+0000] {taskinstance.py:441} INFO - ::group::Post task execution logs
+[2025-08-15T03:20:53.521+0000] {taskinstance.py:1206} INFO - Marking task as SUCCESS. dag_id=playstore_review_etl_pipeline, task_id=transform_clean_reviews, run_id=manual__2025-08-15T03:19:13.216549+00:00, execution_date=20250815T031913, start_date=20250815T032006, end_date=20250815T032053
+[2025-08-15T03:20:53.582+0000] {local_task_job_runner.py:240} INFO - Task exited with return code 0
+[2025-08-15T03:20:53.624+0000] {taskinstance.py:3498} INFO - 1 downstream tasks scheduled from follow-on schedule check
+[2025-08-15T03:20:53.630+0000] {local_task_job_runner.py:222} INFO - ::endgroup::
